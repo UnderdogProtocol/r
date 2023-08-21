@@ -11,8 +11,8 @@ export const SignInView: React.FC = () => {
       <div className="p-12 space-y-8 bg-dark-light rounded-lg w-full">
         <img src="https://underdogprotocol.com/full-logo-dark.svg" />
 
-        <Button type="primary" size="lg" block onClick={() => signIn("google", { callbackUrl: "/" })}>
-          Sign in with Google
+        <Button type="primary" size="lg" block onClick={() => signIn("reddit", { callbackUrl: "/" })}>
+          Sign in with Reddit
         </Button>
       </div>
     </Container>

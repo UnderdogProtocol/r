@@ -85,8 +85,8 @@ const colors = {
 
 const primaryColor = colors.neonGreen;
 const primary = {
-  light: primaryColor[400],
-  DEFAULT: primaryColor[500],
+  light: "#FF5525",
+  DEFAULT: "#FF4500",
   dark: primaryColor[600],
   ...primaryColor,
 };
@@ -102,9 +102,9 @@ const light = {
 
 const darkColor = colors.deepPurple;
 const dark = {
-  accent: darkColor[400],
-  light: darkColor[500],
-  DEFAULT: darkColor[800],
+  accent: "#343536",
+  light: "#1A1A1B",
+  DEFAULT: "",
   dark: darkColor[900],
   ...darkColor,
 };

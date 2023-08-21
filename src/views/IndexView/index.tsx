@@ -1,155 +1,122 @@
 import { Button } from "@/components/Button";
 import { Container } from "@/components/Container";
-import { Dropdown, DropdownProps } from "@/components/Dropdown";
-import { LoadingSection } from "@/components/LoadingSection";
-import { MediaObject } from "@/components/MediaObject";
-import { Modal } from "@/components/Modal";
-import { useContext } from "@/hooks/useContext";
-import { useNftsByOwnerAddress } from "@/hooks/useNftsByOwnerAddress";
-import { shortenAddress, sleep } from "@/lib";
-import { findLinkPda, transferAssetV0 } from "@underdog-protocol/underdog-identity-sdk";
-import axios from "axios";
-import { DAS } from "helius-sdk";
-import { signOut, useSession } from "next-auth/react";
-import { useMemo, useState } from "react";
-import { faker } from "@faker-js/faker";
-import { PublicKey } from "@metaplex-foundation/umi";
 
-export const IndexView: React.FC = () => {
+import { MediaObject } from "@/components/MediaObject";
+import { useContext } from "@/hooks/useContext";
+
+import { findLinkPda } from "@underdog-protocol/underdog-identity-sdk";
+import axios from "axios";
+import { signOut, useSession } from "next-auth/react";
+import { useEffect, useMemo, useState } from "react";
+import { Header } from "@/components/MediaObject/Header";
+import { useNfts } from "@/hooks/useNfts";
+import { sleep } from "@/lib";
+import { LoadingSection } from "@/components/LoadingSection";
+import { Input } from "@/components/Input";
+
+export const IndexView: React.FC<{ subreddits: any[] }> = ({ subreddits }) => {
   const context = useContext();
-  const { data: session } = useSession();
+  const [search, setSearch] = useState("");
   const [minting, setMinting] = useState(false);
+  const { data: session } = useSession();
   const linkPda = useMemo(
     () =>
-      session?.user?.email
-        ? findLinkPda(context, { identifier: session.user.email })[0]
+      session?.user?.name
+        ? findLinkPda(context, { identifier: session.user.name })[0]
         : undefined,
-    [session?.user?.email, context]
+    [session?.user?.name, context]
   );
 
-  const { data, isLoading, refetch } = useNftsByOwnerAddress(linkPda);
+  const { data, refetch } = useNfts(linkPda);
+  const names = data?.items.map((item) => item.content?.metadata.name);
 
-  console.log(data);
+  if (!subreddits.length || !session?.user) return null;
 
-  const [nft, setNft] = useState<DAS.GetAssetResponse>();
+  return (
+    <Container className="font-mono space-y-8 py-16 px-4">
+      <div className="flex lg:flex-row flex-col lg:items-center">
+        <Header
+          title={`Welcome u/${session?.user?.name}`}
+          description="Collect cNFTs from your favorite subreddits"
+          size="2xl"
+        />
+        <div className="flex justify-start lg:justify-end">
+          <Button
+            type="link"
+            onClick={() =>
+              window.open(`https://xray.helius.xyz/account/${linkPda}`)
+            }
+            className="text-primary"
+          >
+            View on XRAY
+          </Button>
+          <Button
+            type="link"
+            onClick={() => signOut()}
+            className="text-primary"
+          >
+            Sign Out
+          </Button>
+        </div>
+      </div>
+      
+      <Input size="lg" onChange={(e) => setSearch((e.target as any).value)} placeholder="r/place" />
 
-  const handleMintNft = async () => {
-    setMinting(true);
-
-    await axios.post("/api/create-nft");
-
-    for (let i = 0; i < 9; i++) {
-      await refetch();
-      await sleep(1000);
-    }
-
-    setMinting(false);
-  };
-
-  const dropdownItems: DropdownProps["items"] = [
-    {
-      children: "Copy Address",
-      size: "sm",
-      onClick: () =>
-        navigator.clipboard.writeText(linkPda || ""),
-    },
-    {
-      children: "View on Solscan",
-      size: "sm",
-      onClick: () =>
-        window.open(
-          `https://solscan.io/account/${linkPda}`
-        ),
-    },
-    {
-      children: "View on XRAY",
-      size: "sm",
-      onClick: () =>
-        window.open(
-          `https://xray.helius.xyz/account/${linkPda}`
-        ),
-    },
-    {
-      children: "Sign Out",
-      size: "sm",
-      onClick: () => signOut(),
-    },
-  ];
-
-  const transfer = async (mintAddress: PublicKey) => {
-    const response = await axios.post("/api/transfer", { mintAddress });
-    console.log(response);
-  }
-
-  if (session?.user?.email && linkPda) {
-    return (
-      <>
-        <Container size="lg" className="py-8">
-          <div className="flex justify-between items-center">
-            <MediaObject
-              media={{ src: session.user.image || undefined }}
-              title={session.user.email}
-              description={shortenAddress(linkPda)}
-            />
-            <Dropdown items={dropdownItems} />
-          </div>
-
-          <hr className="my-4 border border-dark-accent" />
-          {/* <Modal open={!!nft} onClose={() => setNft(undefined)}>
-            <div className="bg-dark p-8 rounded-lg border-dark-accent border space-y-4">
+      <div className="grid lg:grid-cols-3 gap-4 font-mono">
+        {subreddits
+          .filter((subreddit) => subreddit.data.community_icon.split("?")[0])
+          .filter((subreddit) => !search || subreddit.data.display_name_prefixed.toLowerCase().includes(search.toLowerCase()))
+          .map((subreddit) => (
+            <div
+              className="p-8 bg-dark-light border border-dark-accent rounded-lg flex items-center justify-between"
+              key={subreddit.data.title}
+            >
               <MediaObject
-                // media={{
-                //   src: ,
-                // }}
-                title={nft?.content?.metadata.name}
-                description={nft?.content?.metadata.symbol}
-                size="xl"
+                media={{ src: subreddit.data.community_icon.split("?")[0] }}
+                title={subreddit.data.display_name_prefixed}
               />
-              <div className="grid">
-                <Button type="secondary" size="sm" onClick={() => transfer(nft?.id)}>
-                  Send
+              {names?.includes(subreddit.data.display_name_prefixed) ? (
+                <Button
+                  type="primary"
+                  onClick={() =>
+                    window.open(
+                      `https://xray.helius.xyz/token/${
+                        data?.items.find(
+                          (item) =>
+                            item.content?.metadata.name ===
+                            subreddit.data.display_name_prefixed
+                        )?.id
+                      }`
+                    )
+                  }
+                >
+                  Collected
                 </Button>
-              </div>
-            </div>
-          </Modal> */}
-
-          {isLoading ? (
-            <LoadingSection />
-          ) : (
-            <div className="space-y-8">
-              <div className="flex justify-center">
+              ) : (
                 <Button
                   type="secondary"
-                  className="self-center"
-                  onClick={handleMintNft}
                   disabled={minting}
+                  onClick={async () => {
+                    setMinting(true);
+                    await axios.post("/api/create-nft", {
+                      name: subreddit.data.display_name_prefixed,
+                      image: subreddit.data.community_icon.split("?")[0],
+                    });
+
+                    for (let i = 0; i < 9; i++) {
+                      await refetch();
+                      await sleep(1000);
+                    }
+
+                    setMinting(false);
+                  }}
                 >
-                  {minting ? "Minting your NFT..." : "Mint a Random NFT"}
+                  Collect
                 </Button>
-              </div>
-              <div className="grid grid-cols-3 gap-1">
-                {data?.items
-                  .map((item) => (
-                    <button
-                      className="relative pb-[100%] rounded-md overflow-hidden hover:opacity-50"
-                      key={item.id}
-                      onClick={() => window.open(`https://xray.helius.xyz/token/${item.id}`)}
-                    >
-                      <img
-                        className="absolute h-full w-full object-cover"
-                        src={
-                          item.content
-                            ? item.content.json_uri.replace("jsondata", "imgdata")
-                            : "https://updg8.com/imgdata/8QfUaoNPNwjEAKHkXvBUrjQaqiRf7MmpRWUHuQdMZyXj"
-                        }
-                      />
-                    </button>
-                  ))}
-              </div>
+              )}
             </div>
-          )}
-        </Container>
-      </>
-    );
-  }
+          ))}
+      </div>
+    </Container>
+  );
 };

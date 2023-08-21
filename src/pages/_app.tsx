@@ -9,7 +9,7 @@ export default function App({
 }: AppProps) {
   return (
     <>
-    <Head><title>ID | Underdog Protocol</title></Head>
+    <Head><title>r/UnderdogProtocol</title></Head>
       <Providers session={session}>
         <Component {...pageProps} />
       </Providers>

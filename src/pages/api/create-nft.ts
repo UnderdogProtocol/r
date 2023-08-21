@@ -16,19 +16,17 @@ const context = createUmi(
 router.post(async (req, res) => {
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session?.user?.email) return res.status(401).end();
+  if (!session?.user?.name) return res.status(401).end();
 
-  const linkPda = findLinkPda(context, { identifier: session.user.email })[0];
+  const linkPda = findLinkPda(context, { identifier: session.user.name })[0];
 
-  const name = faker.lorem.words(2).slice(0, 31);
-  const symbol = name.slice(0, 5).toUpperCase().replaceAll(" ", "");
+  const { name, image } = req.body;
 
   await axios.post(
-    "https://api.underdogprotocol.com/v2/projects/1/nfts",
+    "https://api.underdogprotocol.com/v2/projects/5/nfts",
     {
       name,
-      symbol,
-      image: "https://picsum.photos/200",
+      image,
       receiverAddress: linkPda,
     },
     { headers: { Authorization: `Bearer ${process.env.UNDERDOG_API_KEY}` } }

@@ -23,9 +23,9 @@ export type ButtonProps = {
 
 const typeToClassName: Record<ButtonType, string> = {
   primary:
-    "text-light bg-primary border-primary hover:bg-primary-dark disabled:bg-primary hover:border-primary-dark",
+    "text-light bg-primary border-primary hover:bg-primary-light disabled:bg-primary hover:border-primary-light",
   secondary:
-    "text-primary border-primary text-primary-dark hover:bg-primary/25",
+    "text-primary border-primary hover:bg-primary/25",
   link: "border-transparent hover:opacity-75 text-light",
   default:
     "bg-dark-light border-dark-400 text-dark-200 hover:bg-dark-light/25 hover:border-dark-300",
@@ -49,7 +49,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   const buttonClassName = twMerge(
     clsx(
-      "inline-flex items-center justify-center focus:outline-none font-medium rounded-t-md rounded-br-md border-2 space-x-2",
+      "inline-flex flex-shrink-0 items-center justify-center focus:outline-none font-medium rounded-2xl border-2 space-x-2",
       typeClassName,
       disabled ? disabledClassName : "",
       block ? blockClassName : "",
